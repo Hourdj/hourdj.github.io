@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hour - 电竞代练平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: {
+      primary: '#4F46E5',
+      indigo: '#6366F1',
+      success: '#10B981',
+      warning: '#FBBF24',
+      danger: '#EF4444',
+      dark: '#11182A',
+      darker: '#0F172A',
+    }
+  } }
+}
+</script>
+<style>
+body{background:#0F172A;color:#fff;font-family:system-ui}
+.glass{background:rgba(30,41,59,0.7);backdrop-filter:blur(12px)}
+.card{border-radius:16px}
+.btn{transition:.3s}
+.btn:active{transform:scale(.97)}
+.order-card{background:#1E293B;border-radius:14px;padding:14px;margin-bottom:10px}
+.qr-box{background:#fff;padding:12px;border-radius:12px;display:inline-block}
+.notice{background:#374151;border-left:4px solid #60A5FA;padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:14px}
+.avatar{width:60px;height:60px;background:#4F46E5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold}
+.star{color:#FBBF24}
+.tag{display:inline-block;padding:2px 6px;border-radius:6px;font-size:12px;background:#4F46E5;margin-right:4px}
+.level-tag{padding:2px 8px;border-radius:99px;font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- 启动页模拟 -->
+<div id="splash" class="fixed inset-0 bg-gradient-to-br from-primary to-indigo flex flex-col items-center justify-center z-50">
+  <div class="avatar text-white mb-4">H</div>
+  <h1 class="text-3xl font-bold mb-1">Hour</h1>
+  <p class="text-sm opacity-70">电竞代练平台</p>
+</div>
+
+<!-- 登录 -->
+<div id="loginPage" class="min-h-screen flex items-center justify-center p-4 hidden">
+  <div class="card w-full max-w-sm p-6 glass">
+    <h2 class="text-2xl font-bold text-center mb-6">Hour 代练平台</h2>
+    <input id="user" placeholder="账号" class="w-full p-3 rounded-lg mb-3 bg-dark/50 border border-white/10">
+    <input id="pwd" type="password" placeholder="密码" class="w-full p-3 rounded-lg mb-4 bg-dark/50 border border-white/10">
+    <div class="flex gap-2 mb-3">
+      <button onclick="login()" class="flex-1 bg-primary py-3 rounded-lg">登录</button>
+      <button onclick="reg()" class="flex-1 bg-white/10 py-3 rounded-lg">注册</button>
+    </div>
+    <button onclick="adminLogin()" class="w-full bg-white/5 py-2 rounded-lg text-sm">管理员入口</button>
+  </div>
+</div>
+
+<!-- 买家 -->
+<div id="buyer" class="hidden min-h-screen pb-24">
+  <div class="bg-gradient-to-r from-primary to-indigo p-5 rounded-b-3xl">
+    <div class="flex items-center gap-3">
+      <div class="avatar">U</div>
+      <div>
+        <div class="font-bold text-xl" id="bname"></div>
+        <div class="text-xs opacity-80" id="bphone"></div>
+      </div>
+      <button onclick="showProfile()" class="ml-auto bg-white/20 px-3 py-2 rounded-full text-sm">我的</button>
+    </div>
+  </div>
+  <div class="p-4">
+    <div class="notice"><i class="fa fa-bullhorn mr-1"></i><span id="notice">平台24小时仲裁 · 恶意跑单必罚保证金</span></div>
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div onclick="createOrder()" class="p-4 text-center glass card"><i class="fa fa-plus text-primary text-xl"></i><div class="text-sm mt-1">发布订单</div></div>
+      <div onclick="refreshBuyerOrders()" class="p-4 text-center glass card"><i class="fa fa-list text-indigo text-xl"></i><div class="text-sm mt-1">我的订单</div></div>
+    </div>
+    <div class="p-4 glass card mb-3">
+      <div class="font-bold mb-2">打手排行</div>
+      <div id="ranking" class="text-sm space-y-2"></div>
+    </div>
+    <div class="p-4 glass card"><div class="font-bold mb-2">订单列表</div><div id="buyerOrders"></div></div>
+  </div>
+</div>
+
+<!-- 打手 -->
+<div id="player" class="hidden min-h-screen pb-24">
+  <div class="bg-gradient-to-r from-pink-500 to-indigo-500 p-5 rounded-b-3xl">
+    <div class="flex items-center gap-3">
+      <div class="avatar">P</div>
+      <div>
+        <div class="font-bold text-xl" id="pname"></div>
+        <div class="text-sm text-yellow-400">保证金：<span id="deposit">0</span> 元</div>
+      </div>
+      <button onclick="showProfile()" class="ml-auto bg-white/20 px-3 py-2 rounded-full text-sm">我的</button>
+    </div>
+  </div>
+  <div class="p-4">
+    <div class="notice"><i class="fa fa-info-circle mr-1"></i>需绑手机+实名+100元保证金才可接单</div>
+    <div class="p-4 glass card mb-3">
+      <button onclick="showBindPhone()" class="w-full bg-primary py-2 rounded-lg mb-2">绑定手机号</button>
+      <button onclick="showIdForm()" class="w-full bg-indigo py-2 rounded-lg mb-2">身份认证</button>
+      <button onclick="showDepositPay()" class="w-full bg-warning py-2 rounded-lg">缴纳保证金</button>
+    </div>
+    <div class="p-4 glass card"><div class="font-bold mb-2">可接订单</div><div id="playerOrders"></div></div>
+  </div>
+</div>
+
+<!-- 个人主页 -->
+<div id="profilePage" class="hidden min-h-screen p-4">
+  <div class="bg-gradient-to-r from-primary to-indigo p-6 rounded-3xl mb-3 text-center">
+    <div class="avatar mx-auto mb-2">U</div>
+    <div class="text-xl font-bold" id="pfName"></div>
+    <div class="text-sm opacity-80" id="pfPhone"></div>
+    <div class="text-sm mt-1" id="pfDeposit"></div>
+    <div class="mt-2"><span id="pfStar" class="text-yellow-400">★★★★★</span></div>
+    <div class="mt-1"><span id="pfLevel" class="level-tag bg-blue-600">新手</span></div>
+  </div>
+  <div class="p-4 glass card mb-3"><div class="font-bold mb-2">评价记录</div><div id="pfComments" class="text-sm space-y-2"></div></div>
+  <button onclick="logout()" class="w-full bg-danger py-3 rounded-lg mb-2">退出登录</button>
+  <button onclick="goBack()" class="w-full bg-white/10 py-3 rounded-lg">返回</button>
+</div>
+
+<!-- 管理员 -->
+<div id="admin" class="hidden min-h-screen p-4">
+  <div class="bg-gradient-to-r from-danger to-warning p-5 rounded-3xl mb-3"><div class="text-2xl font-bold">管理后台</div></div>
+  <div class="p-4 glass card mb-2"><div class="font-bold mb-2">数据概览</div><div id="dashboard" class="text-sm"></div></div>
+  <div class="p-4 glass card mb-3"><div class="font-bold mb-2">订单管理</div><div id="adminOrders"></div></div>
+  <div class="p-4 glass card mb-3"><div class="font-bold mb-2">用户管理</div><div id="adminUsers"></div></div>
+  <button onclick="logout()" class="w-full bg-danger py-3 rounded-lg">退出</button>
+</div>
+
+<!-- 绑定手机 -->
+<div id="bindPhone" class="hidden fixed inset-0 darker p-4 flex items-center justify-center">
+  <div class="card w-full max-w-sm p-6 glass">
+    <div class="text-xl font-bold mb-3">绑定手机号</div>
+    <input id="phone" placeholder="手机号" class="w-full p-3 rounded-lg mb-3 bg-dark/50 border border-white/10">
+    <button onclick="savePhone()" class="w-full bg-primary py-3 rounded-lg mb-2">确认绑定</button>
+    <button onclick="hideAll()" class="w-full bg-white/10 py-2 rounded-lg">取消</button>
+  </div>
+</div>
+
+<!-- 实名 -->
+<div id="idForm" class="hidden fixed inset-0 darker p-4 flex items-center justify-center">
+  <div class="card w-full max-w-sm p-6 glass">
+    <div class="text-xl font-bold mb-3">身份认证</div>
+    <input id="realName" placeholder="真实姓名" class="w-full p-3 rounded-lg mb-3 bg-dark/50 border border-white/10">
+    <input id="idCard" placeholder="身份证号" class="w-full p-3 rounded-lg mb-3 bg-dark/50 border border-white/10">
+    <button onclick="saveIdInfo()" class="w-full bg-primary py-3 rounded-lg">提交</button>
+  </div>
+</div>
+
+<!-- 保证金 -->
+<div id="depositPay" class="hidden fixed inset-0 darker p-4 flex items-center justify-center">
+  <div class="card w-full max-w-sm p-6 glass text-center">
+    <div class="text-xl font-bold mb-3">缴纳保证金</div>
+    <div class="qr-box mb-3"><img src="https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/1917001718b9700009000~tplv-noop.jpg" width="160"></div>
+    <div class="text-lg">保证金：100 元</div>
+    <div class="text-sm text-gray-400 mb-3">防止恶意跑单</div>
+    <button onclick="payDeposit()" class="w-full bg-warning py-3 rounded-lg">已支付</button>
+  </div>
+</div>
+
+<!-- 发布订单 -->
+<div id="createOrder" class="hidden fixed inset-0 darker p-4 flex items-center justify-center">
+  <div class="card w-full max-w-sm p-6 glass">
+    <div class="flex justify-between mb-3"><div class="text-xl font-bold">发布订单</div><button onclick="hideAll()">×</button></div>
+    <input id="ogame" placeholder="游戏/区服" class="w-full p-3 rounded-lg mb-2 bg-dark/50 border border-white/10">
+    <input id="otitle" placeholder="需求内容" class="w-full p-3 rounded-lg mb-2 bg-dark/50 border border-white/10">
+    <input id="oprice" placeholder="佣金" class="w-full p-3 rounded-lg mb-3 bg-dark/50 border border-white/10">
+    <select id="otype" class="w-full p-3 rounded-lg mb-3 bg-dark/50 border border-white/10">
+      <option value="normal">普通单</option>
+      <option value="urgent">加急单</option>
+      <option value="top">大神专单</option>
+    </select>
+    <div class="text-center mb-3"><div class="text-sm mb-1">雇主收款码</div><div class="qr-box"><img src="https://p3-flow-imagex-sign.byteimg.com/ocean-cloud-tos/1917001718b9700009000~tplv-noop.jpg" width="140"></div></div>
+    <button onclick="saveOrder()" class="w-full bg-primary py-3 rounded-lg">发布</button>
+  </div>
+</div>
+
+<!-- 订单详情 + 评价 + 投诉 + 仲裁 -->
+<div id="orderDetail" class="hidden fixed inset-0 darker p-4 flex items-center justify-center">
+  <div class="card w-full max-w-sm p-6 glass">
+    <div class="text-xl font-bold mb-2">订单详情</div>
+    <div id="detailInfo" class="text-sm mb-3"></div>
+    <textarea id="comment" class="w-full p-2 rounded-lg mb-2 bg-dark/50 border border-white/10" rows="2" placeholder="写评价…"></textarea>
+    <div id="detailBtns" class="space-y-2"></div>
+  </div>
+</div>
+
+<script>
+const adminpw = "admin123";
+const DEPOSIT = 100;
+const FEE_RATE = 0.1;
+
+let users = JSON.parse(localStorage.getItem("users")) || [];
+let orders = JSON.parse(localStorage.getItem("orders")) || [];
+let me = JSON.parse(localStorage.getItem("me")) || null;
+let curOrder = null;
+
+function $(e){return document.getElementById(e)}
+function show(e){$(e).classList.remove("hidden")}
+function hide(e){$(e).classList.add("hidden")}
+function hideAll(){
+  hide("loginPage");hide("buyer");hide("player");hide("admin");hide("profilePage");
+  hide("bindPhone");hide("idForm");hide("depositPay");hide("createOrder");hide("orderDetail")
+}
+function save(){
+  localStorage.setItem("users",JSON.stringify(users));
+  localStorage.setItem("orders",JSON.stringify(orders));
+  localStorage.setItem("me",JSON.stringify(me))
+}
+
+// 启动页
+setTimeout(()=>{hide("splash");show("loginPage")},1500);
+
+// 等级计算
+function getLevel(u){
+  let s = u.score || 5;
+  if(s>=4.8)return "宗师";
+  if(s>=4.5)return "大神";
+  if(s>=4.0)return "熟练";
+  return "新手";
+}
+
+// 注册
+function reg(){
+  let u=$("user").value,p=$("pwd").value;
+  if(!u||!p||users.some(x=>x.user==u))return alert("账号已存在");
+  users.push({
+    user:u,pwd:p,role:"buyer",phone:"",realName:"",idCard:"",
+    deposit:0,block:false,comments:[],score:5,orderCount:0,finishCount:0
+  });
+  save();alert("注册成功")
+}
+
+// 登录
+function login(){
+  let u=$("user").value,p=$("pwd").value;
+  let t=users.find(x=>x.user==u&&x.pwd==p);
+  if(!t||t.block)return alert("账号异常或已封禁");
+  me=t;go()
+}
+function adminLogin(){if(prompt("密码")==adminpw)me={role:"admin"},go()}
+
+// 主页
+function showProfile(){
+  hideAll();show("profilePage");
+  $("pfName").innerText=me.user;
+  $("pfPhone").innerText=me.phone||"未绑手机";
+  $("pfDeposit").innerText=me.deposit>=DEPOSIT?"已缴保证金":"未缴保证金";
+  $("pfStar").innerText="★".repeat(Math.round(me.score||5));
+  $("pfLevel").innerText=getLevel(me);
+  let h="";
+  (me.comments||[]).forEach(c=>h+=`<div class='p-2 bg-dark/30 rounded-lg'>${c.text}<br><span class='text-xs text-gray-400'>${c.time}</span></div>`);
+  $("pfComments").innerHTML=h||"暂无评价"
+}
+function goBack(){hideAll();go()}
+function logout(){me=null;localStorage.removeItem("me");hideAll();show("loginPage")}
+
+// 手机绑定（唯一）
+function showBindPhone(){hideAll();show("bindPhone")}
+function savePhone(){
+  let p=$("phone").value.trim();
+  if(!p||p.length<11)return alert("手机号格式错误");
+  if(users.some(x=>x.phone==p&&x.user!=me.user))return alert("该手机号已被使用");
+  me.phone=p;save();alert("绑定成功");go()
+}
+
+// 实名
+function showIdForm(){hideAll();show("idForm")}
+function saveIdInfo(){
+  let n=$("realName").value,c=$("idCard").value;
+  if(!n||!c||c.length<15)return alert("信息错误");
+  me.realName=n;me.idCard=c;save();alert("认证成功");go()
+}
+
+// 保证金
+function showDepositPay(){hideAll();show("depositPay")}
+function payDeposit(){me.deposit=DEPOSIT;save();alert("缴纳成功");go()}
+
+// 权限判断
+function canBuy(){return me.phone}
+function canTake(){return me.phone&&me.realName&&me.idCard&&me.deposit>=DEPOSIT&&!me.block}
+
+// 订单
+function createOrder(){if(!canBuy())return alert("请先绑定手机");hideAll();show("createOrder")}
+function saveOrder(){
+  let g=$("ogame").value,t=$("otitle").value,pr=Number($("oprice").value),type=$("otype").value;
+  if(!g||!t||pr<=0)return alert("请完善信息");
+  orders.unshift({
+    id:Date.now(),buyer:me.user,game:g,title:t,price:pr,type:type,
+    status:"wait",player:"",ctime:new Date().toLocaleString()
+  });
+  save();alert("发布成功");go()
+}
+
+// 接单
+function takeOrder(oid){
+  if(!canTake())return alert("未满足接单条件");
+  let o=orders.find(x=>x.id==oid);
+  if(o.status!="wait")return alert("已被接走");
+  o.status="ing";o.player=me.user;
+  me.orderCount=(me.orderCount||0)+1;
+  save();refreshPlayerOrders()
+}
+
+// 订单详情
+function showDetail(oid){
+  curOrder=orders.find(x=>x.id==oid);let o=curOrder;
+  $("detailInfo").innerHTML=`
+  订单：${o.id}<br>
+  买家：${o.buyer}<br>
+  打手：${o.player||'-'}<br>
+  类型：${o.type=="urgent"?"加急":o.type=="top"?"大神专单":"普通"}<br>
+  佣金：${o.price} 元 (平台抽成10%)<br>
+  状态：${o.status=="wait"?"待接单":o.status=="ing"?"进行中":"已完成"}
+  `;
+  let b="";
+  if(me.role=="buyer"&&o.status=="ing")b+=`<button onclick="finishOrder()" class="w-full bg-success py-2 rounded-lg">确认完成并评价</button>`;
+  if(me.role=="admin"){
+    b+=`<button onclick="forceDone()" class="w-full bg-danger py-2 rounded-lg">强制结单</button>`;
+    b+=`<button onclick="cutDeposit()" class="w-full bg-warning py-2 rounded-lg">扣除打手保证金</button>`;
+    b+=`<button onclick="blockUser()" class="w-full bg-danger py-2 rounded-lg">封禁用户</button>`;
+  }
+  $("detailBtns").innerHTML=b;hideAll();show("orderDetail")
+}
+
+// 完成订单 + 评价
+function finishOrder(){
+  let c=$("comment").value.trim();
+  if(!c)return alert("请填写评价");
+  curOrder.status="done";
+  let pl=users.find(x=>x.user==curOrder.player);
+  if(pl){
+    pl.comments=pl.comments||[];
+    pl.comments.push({text:c,time:new Date().toLocaleString()});
+    pl.score=Math.min(5,Math.max(1,(pl.score||5)*0.8+1));
+    pl.finishCount=(pl.finishCount||0)+1;
+  }
+  save();alert("已完成，评价已同步");go()
+}
+
+// 管理操作
+function forceDone(){curOrder.status="done";save();alert("已强制结单");go()}
+function cutDeposit(){let pl=users.find(x=>x.user==curOrder.player);if(pl)pl.deposit=0;save();alert("已扣除保证金");go()}
+function blockUser(){let pl=users.find(x=>x.user==curOrder.player);if(pl)pl.block=true;save();alert("已封禁");go()}
+
+// 刷新列表
+function refreshBuyerOrders(){
+  let h="";
+  orders.filter(x=>x.buyer==me.user).forEach(o=>{
+    h+=`<div class="order-card" onclick="showDetail(${o.id})">${o.title}<br>佣金：${o.price} 元<br>${o.status}</div>`
+  });
+  $("buyerOrders").innerHTML=h||"<div class='text-gray-500 text-center py-3'>暂无订单</div>"
+}
+
+function refreshPlayerOrders(){
+  let h="";
+  orders.forEach(o=>{
+    h+=`<div class="order-card" onclick="showDetail(${o.id})">${o.title}<br>${o.price}元<br>${o.status}`;
+    if(o.status=="wait")h+=`<br><button onclick="takeOrder(${o.id})" class="bg-primary px-3 py-1 rounded-lg mt-1">接单</button>`;
+    h+=`</div>`
+  });
+  $("playerOrders").innerHTML=h||"<div class='text-gray-500 text-center py-3'>暂无订单</div>"
+}
+
+// 排行
+function refreshRanking(){
+  let list=users.filter(u=>u.role=="player").sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,5);
+  let h="";
+  list.forEach((u,i)=>{h+=`<div>#${i+1} ${u.user} ★${(u.score||5).toFixed(1)}</div>`});
+  $("ranking").innerHTML=h||"暂无打手"
+}
+
+// 管理员数据
+function refreshAdmin(){
+  let o="",u="";
+  orders.forEach(x=>o+=`<div class="order-card text-sm" onclick="showDetail(${x.id})">${x.buyer}→${x.player||'-'} ${x.title} ${x.status}</div>`);
+  users.forEach(x=>u+=`<div class="order-card text-sm">${x.user} | ${x.role} | ${x.phone||'无手机'} | 保证金:${x.deposit} | ${x.block?'封禁':'正常'}</div>`);
+  $("adminOrders").innerHTML=o;$("adminUsers").innerHTML=u;
+  $("dashboard").innerHTML=`
+  总用户：${users.length}<br>
+  总订单：${orders.length}<br>
+  今日订单：${orders.filter(x=>x.ctime.includes(new Date().toLocaleDateString())).length}
+  `
+}
+
+function go(){
+  hideAll();
+  if(me.role=="buyer"){show("buyer");$("bname").innerText=me.user;$("bphone").innerText=me.phone||"未绑手机";refreshBuyerOrders();refreshRanking()}
+  if(me.role=="player"){show("player");$("pname").innerText=me.user;$("deposit").innerText=me.deposit;refreshPlayerOrders()}
+  if(me.role=="admin"){show("admin");refreshAdmin()}
+}
+
+if(me)go();
+</script>
+</body>
+</html>
