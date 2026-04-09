@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hour电竞 - 专业代练平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#6366F1',
+        accent: '#8B5CF6',
+        pink: '#EC4899',
+        orange: '#F59E0B',
+        dark: '#1F2937',
+        light: '#F9FAFB'
+      }
+    }
+  }
+}
+</script>
+<style>
+body{background:#F9FAFB;font-family:system-ui}
+.gradient-header{background:linear-gradient(135deg,#3B82F6 0%,#8B5CF6 100%)}
+.status-badge{padding:2px 8px;border-radius:999px;font-size:12px}
+.pay-item{border:2px solid transparent}
+.pay-item.active{border-color:#3B82F6;background:#EFF6FF}
+.order-card{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<!-- 登录注册 -->
+<div id="loginPage" class="min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-sm">
+    <h2 class="text-2xl font-bold text-center mb-6">Hour电竞 登录</h2>
+    <input id="loginUser" placeholder="用户名" class="w-full p-3 border rounded-lg mb-3">
+    <input id="loginPwd" type="password" placeholder="密码" class="w-full p-3 border rounded-lg mb-4">
+    <div class="flex gap-2 mb-3">
+      <button onclick="login()" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 rounded-lg">登录</button>
+      <button onclick="register()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg">注册</button>
+    </div>
+    <button onclick="adminLogin()" class="w-full bg-gray-200 text-gray-600 py-2 rounded-lg text-sm">管理员登录</button>
+  </div>
+</div>
+
+<!-- 买家主页 -->
+<div id="buyerHome" class="hidden min-h-screen pb-20">
+  <div class="gradient-header text-white p-5 rounded-b-3xl shadow-lg">
+    <div class="flex items-center gap-4">
+      <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+        <i class="fa fa-user text-2xl"></i>
+      </div>
+      <div>
+        <div class="text-xl font-bold" id="buyerName">买家</div>
+        <div class="text-sm opacity-90">ID: <span id="buyerId"></span></div>
+        <div class="text-yellow-300 font-bold text-lg mt-1">余额：¥<span id="buyerBalance">0.00</span></div>
+      </div>
+      <button class="ml-auto text-white text-sm" onclick="showRecharge()">充值</button>
+    </div>
+  </div>
+
+  <div class="p-4">
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-xl p-4 text-center shadow-sm" onclick="showCreateOrder()">
+        <i class="fa fa-shopping-cart text-xl text-blue-500"></i>
+        <div class="text-sm mt-2">我要下单</div>
+      </div>
+      <div class="bg-white rounded-xl p-4 text-center shadow-sm" onclick="refreshBuyerOrders()">
+        <i class="fa fa-list text-xl text-purple-500"></i>
+        <div class="text-sm mt-2">我的订单</div>
+      </div>
+      <div class="bg-white rounded-xl p-4 text-center shadow-sm" onclick="showRecharge()">
+        <i class="fa fa-rmb text-xl text-orange-500"></i>
+        <div class="text-sm mt-2">账户充值</div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-4 shadow-sm">
+      <div class="font-bold mb-3">订单列表</div>
+      <div id="buyerOrderList" class="space-y-3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 打手主页 -->
+<div id="playerHome" class="hidden min-h-screen pb-20">
+  <div class="gradient-header text-white p-5 rounded-b-3xl shadow-lg">
+    <div class="flex items-center gap-4">
+      <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+        <i class="fa fa-user text-2xl"></i>
+      </div>
+      <div>
+        <div class="text-xl font-bold" id="playerName">打手</div>
+        <div class="text-yellow-300 font-bold text-lg mt-1">余额：¥<span id="playerBalance">0.00</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="p-4">
+    <div class="bg-white rounded-xl p-4 shadow-sm">
+      <div class="font-bold mb-3">接单大厅</div>
+      <div id="playerOrderList" class="space-y-3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 管理员主页 -->
+<div id="adminHome" class="hidden min-h-screen pb-20">
+  <div class="gradient-header text-white p-5 rounded-b-3xl shadow-lg">
+    <div class="text-2xl font-bold">管理员后台</div>
+  </div>
+  <div class="p-4">
+    <div class="bg-white rounded-xl p-4 shadow-sm">
+      <div class="font-bold mb-3">全部订单</div>
+      <div id="adminOrderList" class="space-y-3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 充值页面 -->
+<div id="rechargePage" class="hidden fixed inset-0 bg-light p-4 z-50">
+  <div class="max-w-sm mx-auto mt-10">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold">账户充值</h2>
+      <button onclick="closeRecharge()" class="text-2xl">×</button>
+    </div>
+    <div class="bg-white rounded-xl p-4 mb-4">
+      <div class="text-gray-500">当前余额</div>
+      <div class="text-3xl font-bold text-blue-600">¥<span id="rechargeBal">0.00</span></div>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mb-4" id="amtList">
+      <div class="p-4 bg-white rounded-xl text-center" onclick="pick(10)">¥10</div>
+      <div class="p-4 bg-white rounded-xl text-center" onclick="pick(50)">¥50</div>
+      <div class="p-4 bg-white rounded-xl text-center" onclick="pick(100)">¥100</div>
+      <div class="p-4 bg-white rounded-xl text-center" onclick="pick(200)">¥200</div>
+      <div class="p-4 bg-white rounded-xl text-center" onclick="pick(500)">¥500</div>
+      <div class="p-4 bg-white rounded-xl text-center" onclick="pick(1000)">¥1000</div>
+    </div>
+    <input id="customAmt" placeholder="自定义金额" type="number" class="w-full p-3 border rounded-xl mb-4">
+    <button onclick="doPay()" class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 rounded-xl">确认充值</button>
+  </div>
+</div>
+
+<!-- 下单页面 -->
+<div id="createOrderPage" class="hidden fixed inset-0 bg-light p-4 z-50">
+  <div class="max-w-sm mx-auto mt-10">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold">创建订单</h2>
+      <button onclick="closeCreateOrder()" class="text-2xl">×</button>
+    </div>
+    <input id="o_game" placeholder="游戏ID" class="w-full p-3 border rounded-xl mb-3">
+    <input id="o_item" placeholder="服务项目" class="w-full p-3 border rounded-xl mb-3">
+    <input id="o_price" placeholder="价格" type="number" class="w-full p-3 border rounded-xl mb-4">
+    <button onclick="submitOrder()" class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 rounded-xl">提交订单（扣余额）</button>
+  </div>
+</div>
+
+<script>
+// ===================== 数据存储 =====================
+const ADMIN_KEY = "hyh031122";
+let accounts = JSON.parse(localStorage.getItem("hourAccounts")) || [];
+let orders = JSON.parse(localStorage.getItem("hourOrders")) || [];
+let user = JSON.parse(localStorage.getItem("hourLoginUser")) || null;
+let selectAmt = 0;
+
+// ===================== 账号 =====================
+function register() {
+  let u = document.getElementById("loginUser").value;
+  let p = document.getElementById("loginPwd").value;
+  if (!u || !p) return alert("请输入账号密码");
+  if (accounts.find(a => a.user == u)) return alert("已存在");
+  accounts.push({ user: u, pwd: p, role: "buyer", balance: 0 });
+  localStorage.setItem("hourAccounts", JSON.stringify(accounts));
+  alert("注册成功");
+}
+
+function login() {
+  let u = document.getElementById("loginUser").value;
+  let p = document.getElementById("loginPwd").value;
+  let acc = accounts.find(a => a.user == u && a.pwd == p);
+  if (!acc) return alert("账号或密码错误");
+  user = acc;
+  localStorage.setItem("hourLoginUser", JSON.stringify(user));
+  goHome();
+}
+
+function adminLogin() {
+  let p = prompt("管理员密码");
+  if (p == ADMIN_KEY) {
+    user = { role: "admin", user: "admin" };
+    localStorage.setItem("hourLoginUser", JSON.stringify(user));
+    goHome();
+  }
+}
+
+function goHome() {
+  document.getElementById("loginPage").classList.add("hidden");
+  if (user.role == "buyer") {
+    document.getElementById("buyerHome").classList.remove("hidden");
+    document.getElementById("buyerName").innerText = user.user;
+    refreshBal();
+    refreshBuyerOrders();
+  }
+  if (user.role == "player") {
+    document.getElementById("playerHome").classList.remove("hidden");
+    document.getElementById("playerName").innerText = user.user;
+    refreshPlayerOrders();
+  }
+  if (user.role == "admin") {
+    document.getElementById("adminHome").classList.remove("hidden");
+    refreshAdminOrders();
+  }
+}
+
+if (user) goHome();
+
+// ===================== 充值 =====================
+function showRecharge() {
+  document.getElementById("rechargePage").classList.remove("hidden");
+  document.getElementById("rechargeBal").innerText = user.balance.toFixed(2);
+}
+function closeRecharge() {
+  document.getElementById("rechargePage").classList.add("hidden");
+}
+function pick(n) {
+  selectAmt = n;
+  document.querySelectorAll("#amtList div").forEach(i => i.classList.remove("active"));
+  event.target.classList.add("active");
+}
+function doPay() {
+  let amt = selectAmt || Number(document.getElementById("customAmt").value);
+  if (!amt || amt <= 0) return alert("输入金额");
+  let acc = accounts.find(a => a.user == user.user);
+  acc.balance += amt;
+  user.balance = acc.balance;
+  localStorage.setItem("hourAccounts", JSON.stringify(accounts));
+  localStorage.setItem("hourLoginUser", JSON.stringify(user));
+  alert("充值成功 +¥" + amt);
+  closeRecharge();
+  refreshBal();
+}
+
+function refreshBal() {
+  if (user.role == "buyer") document.getElementById("buyerBalance").innerText = user.balance.toFixed(2);
+  if (user.role == "player") document.getElementById("playerBalance").innerText = user.balance.toFixed(2);
+}
+
+// ===================== 订单 =====================
+function showCreateOrder() {
+  document.getElementById("createOrderPage").classList.remove("hidden");
+}
+function closeCreateOrder() {
+  document.getElementById("createOrderPage").classList.add("hidden");
+}
+
+function submitOrder() {
+  let game = document.getElementById("o_game").value;
+  let item = document.getElementById("o_item").value;
+  let price = Number(document.getElementById("o_price").value);
+  if (!game || !item || !price) return alert("请填写完整");
+  if (user.balance < price) return alert("余额不足");
+
+  let acc = accounts.find(a => a.user == user.user);
+  acc.balance -= price;
+  user.balance = acc.balance;
+
+  orders.unshift({
+    id: Date.now(),
+    buyer: user.user,
+    game: game,
+    item: item,
+    price: price,
+    status: "wait",
+    player: ""
+  });
+
+  localStorage.setItem("hourOrders", JSON.stringify(orders));
+  localStorage.setItem("hourAccounts", JSON.stringify(accounts));
+  localStorage.setItem("hourLoginUser", JSON.stringify(user));
+
+  alert("下单成功");
+  closeCreateOrder();
+  refreshBal();
+  refreshBuyerOrders();
+  refreshPlayerOrders();
+}
+
+function takeOrder(id) {
+  let o = orders.find(x => x.id == id);
+  o.status = "ing";
+  o.player = user.user;
+  localStorage.setItem("hourOrders", JSON.stringify(orders));
+  refreshPlayerOrders();
+}
+
+function finishOrder(id) {
+  let o = orders.find(x => x.id == id);
+  o.status = "done";
+  let p = accounts.find(a => a.user == o.player);
+  p.balance += o.price;
+  localStorage.setItem("hourOrders", JSON.stringify(orders));
+  localStorage.setItem("hourAccounts", JSON.stringify(accounts));
+  refreshPlayerOrders();
+}
+
+// ===================== 刷新列表 =====================
+function statusTxt(s) {
+  if (s == "wait") return "待接单";
+  if (s == "ing") return "进行中";
+  if (s == "done") return "已完成";
+}
+
+function refreshBuyerOrders() {
+  let list = orders.filter(o => o.buyer == user.user);
+  let html = "";
+  list.forEach(o => {
+    html += `
+    <div class="order-card shadow-sm">
+      <div>${o.item}</div>
+      <div class="text-sm text-gray-500">¥${o.price}</div>
+      <div class="text-xs">${statusTxt(o.status)}</div>
+    </div>`;
+  });
+  document.getElementById("buyerOrderList").innerHTML = html;
+}
+
+function refreshPlayerOrders() {
+  let html = "";
+  orders.forEach(o => {
+    html += `
+    <div class="order-card shadow-sm">
+      <div>${o.item}</div>
+      <div class="text-sm">买家：${o.buyer}</div>
+      <div class="text-blue-600">¥${o.price}</div>
+      <div class="text-xs">${statusTxt(o.status)}</div>
+      ${o.status == "wait" ? `<button onclick="takeOrder(${o.id})" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded-lg text-sm">接单</button>` : ""}
+      ${o.status == "ing" && o.player == user.user ? `<button onclick="finishOrder(${o.id})" class="mt-2 bg-green-500 text-white px-3 py-1 rounded-lg text-sm">完成</button>` : ""}
+    </div>`;
+  });
+  document.getElementById("playerOrderList").innerHTML = html;
+}
+
+function refreshAdminOrders() {
+  let html = "";
+  orders.forEach(o => {
+    html += `
+    <div class="order-card shadow-sm text-sm">
+      <div>买家：${o.buyer} | 打手：${o.player || "无"}</div>
+      <div>项目：${o.item} | ¥${o.price}</div>
+      <div>状态：${statusTxt(o.status)}</div>
+    </div>`;
+  });
+  document.getElementById("adminOrderList").innerHTML = html;
+}
+</script>
+</body>
+</html>
